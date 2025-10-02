@@ -29,9 +29,22 @@
 		759FF0B02E8EEEDE002542EF /* MotraUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MotraUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		756388432E8EF8E8009E7214 /* Exceptions for "Motra" folder in "Motra" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 759FF0982E8EEEDC002542EF /* Motra */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		759FF09B2E8EEEDC002542EF /* Motra */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				756388432E8EF8E8009E7214 /* Exceptions for "Motra" folder in "Motra" target */,
+			);
 			path = Motra;
 			sourceTree = "<group>";
 		};
@@ -400,6 +413,9 @@
 				DEVELOPMENT_TEAM = KH3M5WDPC8;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Motra/Info.plist;
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "\"백그라운드에서도 운동을 계속 기록하기 위해 위치 정보가 필요합니다.\"";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "\"운동 중 경로를 기록하기 위해 위치 정보가 필요합니다.\"";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -428,6 +444,9 @@
 				DEVELOPMENT_TEAM = KH3M5WDPC8;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Motra/Info.plist;
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "\"백그라운드에서도 운동을 계속 기록하기 위해 위치 정보가 필요합니다.\"";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "\"운동 중 경로를 기록하기 위해 위치 정보가 필요합니다.\"";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

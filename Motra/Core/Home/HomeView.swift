@@ -8,6 +8,10 @@
 import SwiftUI
 
 struct HomeView: View {
+    @State private var showWorkoutTypeSheet = false
+    @State private var navigateToRecording = false
+    @State private var selectedWorkoutType: WorkoutType = .running
+    
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -30,7 +34,7 @@ struct HomeView: View {
                     
                     // 운동 시작 버튼
                     Button {
-                        print("운동 시작!")
+                        showWorkoutTypeSheet = true
                     } label: {
                         HStack {
                             Image(systemName: "play.circle.fill")
@@ -123,6 +127,82 @@ struct HomeView: View {
             }
             .navigationTitle("Motra")
             .background(Color(.systemGroupedBackground))
+            .navigationDestination(isPresented: $navigateToRecording) {
+                RecordingView(workoutType: selectedWorkoutType)
+            }
+            .sheet(isPresented: $showWorkoutTypeSheet) {
+                WorkoutTypeSelectionSheet(
+                    selectedType: $selectedWorkoutType,
+                    onStart: {
+                        showWorkoutTypeSheet = false
+                        navigateToRecording = true
+                    }
+                )
+                .presentationDetents([.height(400)])
+            }
+        }
+    }
+}
+
+// MARK: - Workout Type Selection Sheet
+struct WorkoutTypeSelectionSheet: View {
+    @Binding var selectedType: WorkoutType
+    let onStart: () -> Void
+    
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 20) {
+                Text("운동 타입 선택")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .padding(.top)
+                
+                ForEach(WorkoutType.allCases, id: \.self) { type in
+                    Button {
+                        selectedType = type
+                    } label: {
+                        HStack {
+                            Image(systemName: type.icon)
+                                .font(.title2)
+                                .frame(width: 40)
+                            
+                            Text(type.rawValue)
+                                .font(.headline)
+                            
+                            Spacer()
+                            
+                            if selectedType == type {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(.blue)
+                            }
+                        }
+                        .padding()
+                        .background(
+                            selectedType == type ?
+                            Color.blue.opacity(0.1) :
+                            Color(.secondarySystemGroupedBackground)
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    .buttonStyle(.plain)
+                }
+                
+                Button {
+                    onStart()
+                } label: {
+                    Text("시작하기")
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.blue)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+                .padding(.top)
+                
+                Spacer()
+            }
+            .padding()
         }
     }
 }
