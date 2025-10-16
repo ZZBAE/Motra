@@ -9,93 +9,95 @@ import SwiftUI
 
 struct ActivityView: View {
     @StateObject private var viewModel = ExerciseViewModel()
+    @State private var selectedExercise: ExerciseSession?
     
     var body: some View {
         NavigationStack {
-            ZStack {
-                Color(.systemGroupedBackground)
-                    .ignoresSafeArea()
-                
-                ScrollView {
-                    VStack(spacing: 12) {
-                        if viewModel.exercises.isEmpty {
-                            // 운동 기록이 없을 때
-                            VStack(alignment: .leading, spacing: 12) {
-                                HStack {
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text("첫 운동을 시작해보세요")
-                                            .font(.headline)
-                                        Text("운동을 시작하면 여기에 표시됩니다")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                    
-                                    Spacer()
-                                    
-                                    Image(systemName: "figure.run.circle.fill")
-                                        .font(.largeTitle)
-                                        .foregroundStyle(.blue)
+            ScrollView {
+                VStack(spacing: 12) {
+                    if viewModel.exercises.isEmpty {
+                        // 운동 기록이 없을 때
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("첫 운동을 시작해보세요")
+                                        .font(.headline)
+                                    Text("운동을 시작하면 여기에 표시됩니다")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
                                 }
                                 
-                                Divider()
+                                Spacer()
                                 
-                                HStack(spacing: 20) {
-                                    VStack(spacing: 4) {
-                                        Image(systemName: "timer")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                        Text("--:--")
-                                            .font(.callout)
-                                            .fontWeight(.semibold)
-                                        Text("시간")
-                                            .font(.caption2)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                    .frame(maxWidth: .infinity)
-                                    
-                                    VStack(spacing: 4) {
-                                        Image(systemName: "map")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                        Text("0.0 km")
-                                            .font(.callout)
-                                            .fontWeight(.semibold)
-                                        Text("거리")
-                                            .font(.caption2)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                    .frame(maxWidth: .infinity)
-                                    
-                                    VStack(spacing: 4) {
-                                        Image(systemName: "speedometer")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                        Text("--:--")
-                                            .font(.callout)
-                                            .fontWeight(.semibold)
-                                        Text("페이스")
-                                            .font(.caption2)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                    .frame(maxWidth: .infinity)
-                                }
+                                Image(systemName: "figure.run.circle.fill")
+                                    .font(.largeTitle)
+                                    .foregroundStyle(.blue)
                             }
-                            .padding()
-                            .background(Color(.systemBackground))
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                            .shadow(radius: 2)
-                        } else {
-                            // 운동 기록이 있을 때
-                            ForEach(viewModel.exercises, id: \.id) { exercise in
-                                ExerciseCard(exercise: exercise)
+                            
+                            Divider()
+                            
+                            HStack(spacing: 20) {
+                                VStack(spacing: 4) {
+                                    Image(systemName: "timer")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                    Text("--:--")
+                                        .font(.callout)
+                                        .fontWeight(.semibold)
+                                    Text("시간")
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                }
+                                .frame(maxWidth: .infinity)
+                                
+                                VStack(spacing: 4) {
+                                    Image(systemName: "map")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                    Text("0.0 km")
+                                        .font(.callout)
+                                        .fontWeight(.semibold)
+                                    Text("거리")
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                }
+                                .frame(maxWidth: .infinity)
+                                
+                                VStack(spacing: 4) {
+                                    Image(systemName: "speedometer")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                    Text("--:--")
+                                        .font(.callout)
+                                        .fontWeight(.semibold)
+                                    Text("페이스")
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                }
+                                .frame(maxWidth: .infinity)
                             }
                         }
+                        .padding()
+                        .background(Color(.systemBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .shadow(radius: 2)
+                    } else {
+                        // 운동 기록이 있을 때
+                        ForEach(viewModel.exercises, id: \.id) { exercise in
+                            NavigationLink(value: exercise) {
+                                ExerciseCard(exercise: exercise)
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
-                    .padding()
                 }
+                .padding()
             }
             .navigationTitle("운동 기록")
             .background(Color(.systemGroupedBackground))
+            .navigationDestination(for: ExerciseSession.self) { exercise in
+                WorkoutDetailView(exercise: exercise)
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
