@@ -54,7 +54,7 @@ struct RecordingView: View {
             Button("취소", role: .cancel) { }
             Button("종료", role: .destructive) {
                 locationManager.stopTracking()
-                // TODO: 운동 데이터 저장
+                WorkoutSaveHelper.saveWorkout(type: workoutType, locationManager: locationManager)
                 dismiss()
             }
         } message: {
