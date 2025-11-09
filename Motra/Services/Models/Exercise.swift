@@ -1,8 +1,8 @@
 //
-//  WorkoutModels.swift
+//  Exercise.swift
 //  Motra
 //
-//  Created by Jaeeun Byun on 10/3/25.
+//  Created by Jaeeun Byun on 11/10/25.
 //
 
 import Foundation
@@ -43,13 +43,85 @@ struct RoutePoint: Codable, Identifiable {
         self.speed = location.speed
     }
     
-    // CLLocationCoordinate2D로 변환
     var coordinate: CLLocationCoordinate2D {
         CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
     }
 }
 
-// MARK: - 운동 세션
+// MARK: - 운동 데이터 (Repository에서 사용)
+struct Exercise: Identifiable, Codable {
+    let id: UUID
+    let exerciseType: String
+    let startDate: Date
+    let endDate: Date?
+    let duration: Double // 초
+    let distance: Double // 미터
+    let calories: Double
+    let pace: Double // 초/km
+    let notes: String?
+    
+    // Core Data에서 변환
+    init(session: ExerciseSession) {
+        self.id = session.id ?? UUID()
+        self.exerciseType = session.exerciseType ?? "운동"
+        self.startDate = session.startDate ?? Date()
+        self.endDate = session.endDate
+        self.duration = session.duration
+        self.distance = session.distance
+        self.calories = session.calories
+        self.pace = session.pace
+        self.notes = session.notes
+    }
+    
+    // 직접 생성
+    init(
+        id: UUID = UUID(),
+        exerciseType: String,
+        startDate: Date,
+        endDate: Date? = nil,
+        duration: Double,
+        distance: Double,
+        calories: Double,
+        pace: Double,
+        notes: String? = nil
+    ) {
+        self.id = id
+        self.exerciseType = exerciseType
+        self.startDate = startDate
+        self.endDate = endDate
+        self.duration = duration
+        self.distance = distance
+        self.calories = calories
+        self.pace = pace
+        self.notes = notes
+    }
+    
+    // 계산 프로퍼티들
+    var distanceInKm: String {
+        String(format: "%.2f", distance / 1000.0)
+    }
+    
+    var paceFormatted: String {
+        guard pace > 0 else { return "--:--" }
+        let minutes = Int(pace / 60)
+        let seconds = Int(pace.truncatingRemainder(dividingBy: 60))
+        return String(format: "%d:%02d", minutes, seconds)
+    }
+    
+    var durationFormatted: String {
+        let hours = Int(duration) / 3600
+        let minutes = (Int(duration) % 3600) / 60
+        let seconds = Int(duration) % 60
+        
+        if hours > 0 {
+            return String(format: "%d:%02d:%02d", hours, minutes, seconds)
+        } else {
+            return String(format: "%02d:%02d", minutes, seconds)
+        }
+    }
+}
+
+// MARK: - 운동 세션 (실시간 추적용)
 struct WorkoutSession: Identifiable, Codable {
     let id: UUID
     let type: WorkoutType
@@ -75,12 +147,10 @@ struct WorkoutSession: Identifiable, Codable {
         self.averagePace = 0
     }
     
-    // 거리를 km로 변환
     var distanceInKm: Double {
         distance / 1000.0
     }
     
-    // 페이스를 분:초/km 형식으로
     var paceFormatted: String {
         guard averagePace > 0 else { return "--:--" }
         let minutes = Int(averagePace / 60)
@@ -88,7 +158,6 @@ struct WorkoutSession: Identifiable, Codable {
         return String(format: "%d:%02d", minutes, seconds)
     }
     
-    // 시간을 시:분:초 형식으로
     var durationFormatted: String {
         let hours = Int(duration) / 3600
         let minutes = Int(duration) / 60 % 60
@@ -102,7 +171,7 @@ struct WorkoutSession: Identifiable, Codable {
     }
 }
 
-// MARK: - 운동 통계
+// MARK: - 실시간 통계 (RecordingView에서 사용)
 struct WorkoutStats {
     var currentDistance: Double = 0 // 미터
     var currentSpeed: Double = 0 // m/s

@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct StatisticsView: View {
+    @StateObject private var viewModel = StatisticsViewModel()
     @State private var selectedPeriod = 0
     
     var body: some View {
