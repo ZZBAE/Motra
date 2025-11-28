@@ -17,15 +17,15 @@ class WorkoutSaveHelper {
         
         // 기본 정보
         let duration = locationManager.stats.elapsedTime
-        let distance = locationManager.stats.currentDistance / 1000.0 // 미터를 킬로미터로 변환
+        let distance = locationManager.stats.currentDistance  // 미터 단위 그대로 저장
         let calories = locationManager.stats.calories
-        let pace = distance > 0 ? duration / distance : 0
+        let pace = locationManager.stats.currentPace  // 이미 초/km 단위
         
         // ExerciseSession 생성
         let session = coreDataManager.createExerciseSession(
             exerciseType: type.rawValue,
             duration: duration,
-            distance: distance,
+            distance: distance,  // 미터 단위로 저장
             calories: calories,
             pace: pace,
             startDate: Date(timeIntervalSinceNow: -duration),
@@ -45,6 +45,6 @@ class WorkoutSaveHelper {
             )
         }
         
-        print("✅ 운동 데이터 저장 완료: \(type.rawValue), \(String(format: "%.2f", distance))km, \(String(format: "%.0f", duration))초")
+        print("✅ 운동 데이터 저장 완료: \(type.rawValue), \(String(format: "%.2f", distance))m (\(String(format: "%.2f", distance/1000))km), \(String(format: "%.0f", duration))초")
     }
 }

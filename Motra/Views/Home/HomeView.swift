@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct HomeView: View {
+    @StateObject private var viewModel = HomeViewModel()
     @State private var showWorkoutTypeSheet = false
     @State private var navigateToRecording = false
     @State private var selectedWorkoutType: WorkoutType = .running
@@ -17,116 +18,31 @@ struct HomeView: View {
             ScrollView {
                 VStack(spacing: 20) {
                     // 환영 메시지
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("안녕하세요! 🏃‍♂️")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                        
-                        Text("오늘도 건강한 하루 보내세요")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                    welcomeSection
+                    
+                    // 티어 카드
+                    if let tierProgress = viewModel.tierProgress {
+                        TierCardView(progress: tierProgress)
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding()
-                    .background(Color(.systemBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .shadow(radius: 2)
                     
                     // 운동 시작 버튼
-                    Button {
-                        showWorkoutTypeSheet = true
-                    } label: {
-                        HStack {
-                            Image(systemName: "play.circle.fill")
-                                .font(.title2)
-                            Text("운동 시작하기")
-                                .font(.headline)
-                        }
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(
-                            LinearGradient(
-                                colors: [.blue, .cyan],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                    }
+                    startWorkoutButton
                     
-                    // 오늘의 목표
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("오늘의 목표")
-                            .font(.headline)
-                        
-                        HStack(spacing: 12) {
-                            VStack(alignment: .leading, spacing: 8) {
-                                HStack {
-                                    Image(systemName: "flame.fill")
-                                        .foregroundStyle(.orange)
-                                    Text("칼로리")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                Text("0/500 kcal")
-                                    .font(.callout)
-                                    .fontWeight(.semibold)
-                            }
-                            .padding()
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color(.secondarySystemGroupedBackground))
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
-                            
-                            VStack(alignment: .leading, spacing: 8) {
-                                HStack {
-                                    Image(systemName: "figure.walk")
-                                        .foregroundStyle(.green)
-                                    Text("거리")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                Text("0/5 km")
-                                    .font(.callout)
-                                    .fontWeight(.semibold)
-                            }
-                            .padding()
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color(.secondarySystemGroupedBackground))
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
-                        }
-                    }
-                    .padding()
-                    .background(Color(.systemBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .shadow(radius: 2)
-                    
-                    // 최근 운동
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("최근 운동")
-                            .font(.headline)
-                        
-                        VStack(spacing: 12) {
-                            Image(systemName: "figure.run.circle")
-                                .font(.system(size: 50))
-                                .foregroundStyle(.gray)
-                            
-                            Text("아직 운동 기록이 없어요")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 30)
-                    }
-                    .padding()
-                    .background(Color(.systemBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .shadow(radius: 2)
+                    // 소셜 피드
+                    socialFeedSection
                 }
                 .padding()
             }
             .navigationTitle("Motra")
             .background(Color(.systemGroupedBackground))
+            .onAppear {
+                Task {
+                    await viewModel.refresh()
+                }
+            }
+            .refreshable {
+                await viewModel.refresh()
+            }
             .navigationDestination(isPresented: $navigateToRecording) {
                 RecordingView(workoutType: selectedWorkoutType)
             }
@@ -141,6 +57,298 @@ struct HomeView: View {
                 .presentationDetents([.height(400)])
             }
         }
+    }
+    
+    // MARK: - 환영 메시지
+    private var welcomeSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("안녕하세요! 🏃‍♂️")
+                .font(.title2)
+                .fontWeight(.bold)
+            
+            Text("오늘도 건강한 하루 보내세요")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .shadow(radius: 2)
+    }
+    
+    // MARK: - 운동 시작 버튼
+    private var startWorkoutButton: some View {
+        Button {
+            showWorkoutTypeSheet = true
+        } label: {
+            HStack {
+                Image(systemName: "play.circle.fill")
+                    .font(.title2)
+                Text("운동 시작하기")
+                    .font(.headline)
+            }
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity)
+            .padding()
+            .background(
+                LinearGradient(
+                    colors: [.blue, .cyan],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+    }
+    
+    // MARK: - 소셜 피드 섹션
+    private var socialFeedSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("소셜 피드")
+                    .font(.headline)
+                
+                Spacer()
+                
+                Button {
+                    // TODO: 전체 피드 보기
+                } label: {
+                    Text("더보기")
+                        .font(.subheadline)
+                        .foregroundStyle(.blue)
+                }
+            }
+            
+            if viewModel.feedItems.isEmpty {
+                emptyFeedPlaceholder
+            } else {
+                LazyVStack(spacing: 12) {
+                    ForEach(viewModel.feedItems.prefix(3)) { item in
+                        FeedItemCard(item: item) {
+                            viewModel.toggleLike(for: item)
+                        }
+                    }
+                }
+            }
+        }
+        .padding()
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .shadow(radius: 2)
+    }
+    
+    // MARK: - 빈 피드 플레이스홀더
+    private var emptyFeedPlaceholder: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "person.3")
+                .font(.system(size: 40))
+                .foregroundStyle(.gray)
+            
+            Text("아직 피드가 없어요")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            
+            Text("친구를 팔로우하고 운동을 공유해보세요")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 30)
+    }
+}
+
+// MARK: - 티어 카드 뷰
+struct TierCardView: View {
+    let progress: TierProgress
+    
+    var body: some View {
+        VStack(spacing: 16) {
+            // 티어 정보
+            HStack(spacing: 12) {
+                // 티어 아이콘
+                ZStack {
+                    Circle()
+                        .fill(progress.currentTier.color.opacity(0.2))
+                        .frame(width: 60, height: 60)
+                    
+                    Image(systemName: progress.currentTier.icon)
+                        .font(.title)
+                        .foregroundStyle(progress.currentTier.color)
+                }
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(progress.currentTier.displayName)
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundStyle(progress.currentTier.color)
+                    
+                    if let nextTier = progress.nextTier {
+                        Text("다음: \(nextTier.displayName)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text("최고 티어 달성! 🎉")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                
+                Spacer()
+                
+                // 총 거리
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text("\(progress.currentDistanceInKm) km")
+                        .font(.headline)
+                        .fontWeight(.bold)
+                    
+                    Text("총 거리")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            
+            // 프로그레스 바
+            VStack(spacing: 6) {
+                GeometryReader { geometry in
+                    ZStack(alignment: .leading) {
+                        // 배경
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(Color(.systemGray5))
+                            .frame(height: 12)
+                        
+                        // 진행
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(
+                                LinearGradient(
+                                    colors: [progress.currentTier.color, progress.currentTier.color.opacity(0.7)],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .frame(width: geometry.size.width * progress.progressPercentage, height: 12)
+                    }
+                }
+                .frame(height: 12)
+                
+                // 진행 텍스트
+                if progress.nextTier != nil {
+                    HStack {
+                        Text("\(Int(progress.progressPercentage * 100))%")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                        
+                        Spacer()
+                        
+                        Text("다음 티어까지 \(progress.remainingDistanceInKm) km")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        }
+        .padding()
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .shadow(radius: 2)
+    }
+}
+
+// MARK: - 피드 아이템 카드
+struct FeedItemCard: View {
+    let item: FeedItem
+    let onLikeTapped: () -> Void
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // 유저 정보
+            HStack(spacing: 10) {
+                // 프로필 이미지
+                ZStack {
+                    Circle()
+                        .fill(item.user.tier.color.opacity(0.2))
+                        .frame(width: 40, height: 40)
+                    
+                    Image(systemName: "person.fill")
+                        .foregroundStyle(item.user.tier.color)
+                }
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Text(item.user.nickname)
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                        
+                        // 티어 뱃지
+                        Text(item.user.tier.grade.rawValue)
+                            .font(.caption2)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(item.user.tier.color.opacity(0.2))
+                            .foregroundStyle(item.user.tier.color)
+                            .clipShape(Capsule())
+                    }
+                    
+                    Text(item.timeAgo)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                
+                Spacer()
+                
+                // 운동 타입 아이콘
+                Image(systemName: item.workout.icon)
+                    .font(.title3)
+                    .foregroundStyle(.blue)
+            }
+            
+            // 운동 정보
+            HStack(spacing: 16) {
+                Label(item.workout.distanceInKm + " km", systemImage: "arrow.left.arrow.right")
+                Label(item.workout.durationFormatted, systemImage: "clock")
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            
+            // 내용
+            if let content = item.content {
+                Text(content)
+                    .font(.subheadline)
+            }
+            
+            // 액션 버튼
+            HStack(spacing: 20) {
+                Button {
+                    onLikeTapped()
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: item.isLiked ? "heart.fill" : "heart")
+                            .foregroundStyle(item.isLiked ? .red : .secondary)
+                        Text("\(item.likeCount)")
+                            .foregroundStyle(.secondary)
+                    }
+                    .font(.subheadline)
+                }
+                .buttonStyle(.plain)
+                
+                Button {
+                    // TODO: 댓글 보기
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "bubble.right")
+                        Text("\(item.commentCount)")
+                    }
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                
+                Spacer()
+            }
+        }
+        .padding()
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 }
 
