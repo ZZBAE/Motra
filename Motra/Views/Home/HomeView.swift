@@ -12,6 +12,7 @@ struct HomeView: View {
     @State private var showWorkoutTypeSheet = false
     @State private var navigateToRecording = false
     @State private var selectedWorkoutType: WorkoutType = .running
+    @State private var showFeedView = false
     
     var body: some View {
         NavigationStack {
@@ -45,6 +46,9 @@ struct HomeView: View {
             }
             .navigationDestination(isPresented: $navigateToRecording) {
                 RecordingView(workoutType: selectedWorkoutType)
+            }
+            .navigationDestination(isPresented: $showFeedView) {
+                FeedView()
             }
             .sheet(isPresented: $showWorkoutTypeSheet) {
                 WorkoutTypeSelectionSheet(
@@ -112,7 +116,7 @@ struct HomeView: View {
                 Spacer()
                 
                 Button {
-                    // TODO: 전체 피드 보기
+                    showFeedView = true
                 } label: {
                     Text("더보기")
                         .font(.subheadline)
@@ -120,13 +124,15 @@ struct HomeView: View {
                 }
             }
             
-            if viewModel.feedItems.isEmpty {
+            if viewModel.posts.isEmpty {
                 emptyFeedPlaceholder
             } else {
                 LazyVStack(spacing: 12) {
-                    ForEach(viewModel.feedItems.prefix(3)) { item in
-                        FeedItemCard(item: item) {
-                            viewModel.toggleLike(for: item)
+                    ForEach(viewModel.posts.prefix(3)) { post in
+                        HomeFeedCard(post: post) {
+                            Task {
+                                await viewModel.toggleLike(for: post)
+                            }
                         }
                     }
                 }
@@ -155,6 +161,101 @@ struct HomeView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 30)
+    }
+}
+
+// MARK: - 홈 피드 카드 (Post 모델 사용)
+struct HomeFeedCard: View {
+    let post: Post
+    let onLikeTapped: () -> Void
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // 유저 정보
+            HStack(spacing: 10) {
+                // 프로필 이미지
+                ZStack {
+                    Circle()
+                        .fill(post.authorTier.toTier.color.opacity(0.2))
+                        .frame(width: 40, height: 40)
+                    
+                    Image(systemName: "person.fill")
+                        .foregroundStyle(post.authorTier.toTier.color)
+                }
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Text(post.authorNickname)
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                        
+                        // 티어 뱃지
+                        Text(post.authorTier.grade)
+                            .font(.caption2)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(post.authorTier.toTier.color.opacity(0.2))
+                            .foregroundStyle(post.authorTier.toTier.color)
+                            .clipShape(Capsule())
+                    }
+                    
+                    Text(post.timeAgo)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                
+                Spacer()
+                
+                // 운동 타입 아이콘
+                if let exercise = post.exerciseSummary {
+                    Image(systemName: exercise.icon)
+                        .font(.title3)
+                        .foregroundStyle(.blue)
+                }
+            }
+            
+            // 운동 정보
+            if let exercise = post.exerciseSummary {
+                HStack(spacing: 16) {
+                    Label(exercise.distanceInKm + " km", systemImage: "arrow.left.arrow.right")
+                    Label(exercise.durationFormatted, systemImage: "clock")
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+            
+            // 내용
+            Text(post.content)
+                .font(.subheadline)
+            
+            // 액션 버튼
+            HStack(spacing: 20) {
+                Button {
+                    onLikeTapped()
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: post.isLiked ? "heart.fill" : "heart")
+                            .foregroundStyle(post.isLiked ? .red : .secondary)
+                        Text("\(post.likeCount)")
+                            .foregroundStyle(.secondary)
+                    }
+                    .font(.subheadline)
+                }
+                .buttonStyle(.plain)
+                
+                HStack(spacing: 4) {
+                    Image(systemName: "bubble.right")
+                    Text("\(post.commentCount)")
+                }
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                
+                Spacer()
+            }
+        }
+        .padding()
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 }
 
@@ -251,104 +352,6 @@ struct TierCardView: View {
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .shadow(radius: 2)
-    }
-}
-
-// MARK: - 피드 아이템 카드
-struct FeedItemCard: View {
-    let item: FeedItem
-    let onLikeTapped: () -> Void
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // 유저 정보
-            HStack(spacing: 10) {
-                // 프로필 이미지
-                ZStack {
-                    Circle()
-                        .fill(item.user.tier.color.opacity(0.2))
-                        .frame(width: 40, height: 40)
-                    
-                    Image(systemName: "person.fill")
-                        .foregroundStyle(item.user.tier.color)
-                }
-                
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 6) {
-                        Text(item.user.nickname)
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                        
-                        // 티어 뱃지
-                        Text(item.user.tier.grade.rawValue)
-                            .font(.caption2)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(item.user.tier.color.opacity(0.2))
-                            .foregroundStyle(item.user.tier.color)
-                            .clipShape(Capsule())
-                    }
-                    
-                    Text(item.timeAgo)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                
-                Spacer()
-                
-                // 운동 타입 아이콘
-                Image(systemName: item.workout.icon)
-                    .font(.title3)
-                    .foregroundStyle(.blue)
-            }
-            
-            // 운동 정보
-            HStack(spacing: 16) {
-                Label(item.workout.distanceInKm + " km", systemImage: "arrow.left.arrow.right")
-                Label(item.workout.durationFormatted, systemImage: "clock")
-            }
-            .font(.caption)
-            .foregroundStyle(.secondary)
-            
-            // 내용
-            if let content = item.content {
-                Text(content)
-                    .font(.subheadline)
-            }
-            
-            // 액션 버튼
-            HStack(spacing: 20) {
-                Button {
-                    onLikeTapped()
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: item.isLiked ? "heart.fill" : "heart")
-                            .foregroundStyle(item.isLiked ? .red : .secondary)
-                        Text("\(item.likeCount)")
-                            .foregroundStyle(.secondary)
-                    }
-                    .font(.subheadline)
-                }
-                .buttonStyle(.plain)
-                
-                Button {
-                    // TODO: 댓글 보기
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "bubble.right")
-                        Text("\(item.commentCount)")
-                    }
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-                
-                Spacer()
-            }
-        }
-        .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 }
 
