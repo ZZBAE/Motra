@@ -23,6 +23,7 @@ class LocationManager: NSObject, ObservableObject {
     private var startTime: Date?
     private var timer: Timer?
     private var lastLocation: CLLocation?
+    private var pendingTrackingStart = false  // 권한 대기 중 플래그
     
     // MARK: - Initialization
     override init() {
@@ -45,12 +46,20 @@ class LocationManager: NSObject, ObservableObject {
     
     /// 추적 시작
     func startTracking() {
-        guard authorizationStatus == .authorizedWhenInUse ||
-              authorizationStatus == .authorizedAlways else {
+        // 권한 확인
+        if authorizationStatus == .notDetermined {
+            pendingTrackingStart = true
             requestPermission()
             return
         }
         
+        guard authorizationStatus == .authorizedWhenInUse ||
+              authorizationStatus == .authorizedAlways else {
+            print("❌ 위치 권한이 없습니다: \(authorizationStatus.rawValue)")
+            return
+        }
+        
+        // 추적 시작
         isTracking = true
         startTime = Date()
         route.removeAll()
@@ -59,6 +68,8 @@ class LocationManager: NSObject, ObservableObject {
         
         locationManager.startUpdatingLocation()
         startTimer()
+        
+        print("✅ 위치 추적 시작")
     }
     
     /// 추적 중지
@@ -66,6 +77,7 @@ class LocationManager: NSObject, ObservableObject {
         isTracking = false
         locationManager.stopUpdatingLocation()
         stopTimer()
+        print("⏹️ 위치 추적 중지")
     }
     
     /// 추적 일시정지
@@ -133,6 +145,16 @@ extension LocationManager: CLLocationManagerDelegate {
     
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         authorizationStatus = manager.authorizationStatus
+        print("📍 위치 권한 변경: \(authorizationStatus.rawValue)")
+        
+        // 권한을 받으면 대기 중이던 추적 시작
+        if pendingTrackingStart {
+            pendingTrackingStart = false
+            if authorizationStatus == .authorizedWhenInUse ||
+               authorizationStatus == .authorizedAlways {
+                startTracking()
+            }
+        }
     }
     
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
@@ -172,6 +194,6 @@ extension LocationManager: CLLocationManagerDelegate {
     }
     
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        print("Location Manager Error: \(error.localizedDescription)")
+        print("❌ Location Manager Error: \(error.localizedDescription)")
     }
 }

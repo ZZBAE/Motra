@@ -9,7 +9,7 @@ import SwiftUI
 import MapKit
 
 struct RecordingView: View {
-    @StateObject private var locationManager = LocationManager()
+    @EnvironmentObject private var locationManager: LocationManager
     @Environment(\.dismiss) private var dismiss
     
     let workoutType: WorkoutType
@@ -49,6 +49,12 @@ struct RecordingView: View {
         }
         .onAppear {
             locationManager.startTracking()
+        }
+        .onDisappear {
+            // 화면 벗어날 때 추적 중지 (저장 안 하고 나갈 경우)
+            if locationManager.isTracking {
+                locationManager.stopTracking()
+            }
         }
         .alert("운동 종료", isPresented: $showStopAlert) {
             Button("취소", role: .cancel) { }
@@ -206,5 +212,6 @@ struct StatItem: View {
 #Preview {
     NavigationStack {
         RecordingView(workoutType: .running)
+            .environmentObject(LocationManager())
     }
 }

@@ -9,9 +9,16 @@ import SwiftUI
 
 @main
 struct MoTraApp: App {
+    @StateObject private var locationManager = LocationManager()
+    
     var body: some Scene {
         WindowGroup {
             MainTabView()
+                .environmentObject(locationManager)
+                .onAppear {
+                    // 앱 시작 시 위치 권한 요청
+                    locationManager.requestPermission()
+                }
         }
     }
 }
