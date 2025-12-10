@@ -16,6 +16,9 @@ struct StatisticsView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
+                    // 커스텀 헤더
+                    CustomHeaderView(title: "통계")
+                    
                     // 기간 선택
                     periodPicker
                     
@@ -28,9 +31,10 @@ struct StatisticsView: View {
                     // 추가 통계
                     additionalStatisticsSection
                 }
-                .padding()
+                .padding(.horizontal)
+                .padding(.bottom)
             }
-            .navigationTitle("통계")
+            .navigationBarHidden(true)
             .background(Color(.systemGroupedBackground))
             .overlay {
                 if viewModel.isLoading {

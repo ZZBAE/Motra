@@ -22,6 +22,9 @@ struct ProfileView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
+                    // 커스텀 헤더
+                    CustomHeaderView(title: "프로필")
+                    
                     // 프로필 헤더
                     profileHeader
                     
@@ -31,9 +34,10 @@ struct ProfileView: View {
                     // 설정 메뉴
                     settingsSection
                 }
-                .padding()
+                .padding(.horizontal)
+                .padding(.bottom)
             }
-            .navigationTitle("프로필")
+            .navigationBarHidden(true)
             .background(Color(.systemGroupedBackground))
             .onAppear {
                 Task {
@@ -43,8 +47,13 @@ struct ProfileView: View {
             .refreshable {
                 await viewModel.refresh()
             }
-            .sheet(isPresented: $showEditProfile) {
-                EditProfileView(profile: $viewModel.profile)
+            .sheet(isPresented: $showEditProfile, onDismiss: {
+                // 프로필 편집 후 새로고침
+                Task {
+                    await viewModel.refresh()
+                }
+            }) {
+                EditProfileView(viewModel: viewModel)
             }
             .sheet(isPresented: $showNewPost, onDismiss: {
                 // 새 글 작성 후 목록 새로고침
@@ -149,7 +158,7 @@ struct ProfileView: View {
                         .foregroundStyle(.secondary)
                     
                     // 자기소개
-                    if let bio = viewModel.profile.bio {
+                    if let bio = viewModel.profile.bio, !bio.isEmpty {
                         Text(bio)
                             .font(.subheadline)
                             .foregroundStyle(.primary)
@@ -694,19 +703,27 @@ struct SettingsRow: View {
 
 // MARK: - EditProfileView
 struct EditProfileView: View {
-    @Binding var profile: UserProfile
+    @ObservedObject var viewModel: ProfileViewModel
     @Environment(\.dismiss) private var dismiss
+    
+    @State private var nickname: String = ""
+    @State private var username: String = ""
+    @State private var bio: String = ""
+    @State private var isSaving = false
     
     var body: some View {
         NavigationStack {
             Form {
                 Section("기본 정보") {
-                    TextField("닉네임", text: $profile.nickname)
-                    TextField("사용자명", text: $profile.username)
-                    TextField("자기소개", text: Binding(
-                        get: { profile.bio ?? "" },
-                        set: { profile.bio = $0.isEmpty ? nil : $0 }
-                    ))
+                    TextField("닉네임", text: $nickname)
+                    TextField("사용자명", text: $username)
+                    TextField("자기소개", text: $bio)
+                }
+                
+                Section {
+                    Text("프로필 변경 시 이전에 작성한 게시물의 작성자 정보도 함께 업데이트됩니다.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
             }
             .navigationTitle("프로필 편집")
@@ -716,9 +733,42 @@ struct EditProfileView: View {
                     Button("취소") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("저장") { dismiss() }
+                    Button("저장") {
+                        saveProfile()
+                    }
+                    .disabled(nickname.isEmpty || username.isEmpty || isSaving)
+                    .fontWeight(.semibold)
                 }
             }
+            .onAppear {
+                // 현재 프로필 정보로 초기화
+                nickname = viewModel.profile.nickname
+                username = viewModel.profile.username
+                bio = viewModel.profile.bio ?? ""
+            }
+            .overlay {
+                if isSaving {
+                    ProgressView()
+                        .scaleEffect(1.5)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(Color.black.opacity(0.2))
+                }
+            }
+        }
+    }
+    
+    private func saveProfile() {
+        isSaving = true
+        
+        Task {
+            await viewModel.updateProfile(
+                nickname: nickname,
+                username: username,
+                bio: bio.isEmpty ? nil : bio
+            )
+            
+            isSaving = false
+            dismiss()
         }
     }
 }

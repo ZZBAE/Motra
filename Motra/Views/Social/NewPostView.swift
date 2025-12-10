@@ -11,6 +11,9 @@ struct NewPostView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel = NewPostViewModel()
     
+    // 미리 선택된 운동 (운동 상세에서 글 작성하기로 올 때)
+    var preselectedExercise: Exercise? = nil
+    
     @State private var content = ""
     @State private var selectedVisibility: PostVisibility = .public
     @State private var showExercisePicker = false
@@ -61,6 +64,12 @@ struct NewPostView: View {
                         .background(Color.black.opacity(0.2))
                 }
             }
+            .onAppear {
+                // 미리 선택된 운동이 있으면 설정
+                if let exercise = preselectedExercise {
+                    selectedExercise = exercise
+                }
+            }
         }
     }
     
@@ -92,12 +101,15 @@ struct NewPostView: View {
                 
                 Spacer()
                 
-                Button {
-                    showExercisePicker = true
-                } label: {
-                    Text(selectedExercise == nil ? "선택하기" : "변경")
-                        .font(.subheadline)
-                        .foregroundStyle(.blue)
+                // 미리 선택된 운동이 없을 때만 변경 가능
+                if preselectedExercise == nil {
+                    Button {
+                        showExercisePicker = true
+                    } label: {
+                        Text(selectedExercise == nil ? "선택하기" : "변경")
+                            .font(.subheadline)
+                            .foregroundStyle(.blue)
+                    }
                 }
             }
             
@@ -126,11 +138,14 @@ struct NewPostView: View {
             
             Spacer()
             
-            Button {
-                selectedExercise = nil
-            } label: {
-                Image(systemName: "xmark.circle.fill")
-                    .foregroundStyle(.secondary)
+            // 미리 선택된 운동이 없을 때만 삭제 가능
+            if preselectedExercise == nil {
+                Button {
+                    selectedExercise = nil
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.secondary)
+                }
             }
         }
         .padding()
@@ -182,13 +197,16 @@ class NewPostViewModel: ObservableObject {
     
     private let postRepository: PostRepository
     private let exerciseRepository: ExerciseRepository
+    private let userManager: UserManager
     
     init(
         postRepository: PostRepository = LocalPostRepository(),
-        exerciseRepository: ExerciseRepository = CoreDataExerciseRepository()
+        exerciseRepository: ExerciseRepository = CoreDataExerciseRepository(),
+        userManager: UserManager = .shared
     ) {
         self.postRepository = postRepository
         self.exerciseRepository = exerciseRepository
+        self.userManager = userManager
     }
     
     func createPost(content: String, exercise: Exercise?, visibility: PostVisibility) async {
@@ -201,16 +219,16 @@ class NewPostViewModel: ObservableObject {
             exerciseSummary = ExerciseSummary(from: exercise)
         }
         
-        // 실제 티어 계산
-        let currentTier = await calculateCurrentTier()
+        // UserManager에서 현재 유저 정보 가져오기
+        let currentUser = userManager.currentUser
         let tierData = TierData(
-            grade: currentTier.grade.rawValue,
-            division: currentTier.division.rawValue
+            grade: currentUser.tier.grade.rawValue,
+            division: currentUser.tier.division.rawValue
         )
         
         let post = Post(
-            authorNickname: "나",  // TODO: 실제 유저 정보 사용
-            authorUsername: "me",
+            authorNickname: currentUser.nickname,
+            authorUsername: currentUser.username,
             authorTier: tierData,
             exerciseId: exercise?.id,
             content: content,
@@ -225,18 +243,6 @@ class NewPostViewModel: ObservableObject {
         }
         
         isLoading = false
-    }
-    
-    // 현재 티어 계산
-    private func calculateCurrentTier() async -> Tier {
-        do {
-            let exercises = try await exerciseRepository.fetchExercises()
-            let totalDistance = exercises.reduce(0) { $0 + $1.distance }
-            return TierCalculator.calculateTier(totalDistanceInMeters: totalDistance)
-        } catch {
-            // 에러 시 기본 티어 반환
-            return Tier(grade: .bronze, division: .four)
-        }
     }
 }
 

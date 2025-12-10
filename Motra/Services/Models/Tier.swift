@@ -8,7 +8,7 @@
 import SwiftUI
 
 // MARK: - 티어 등급
-enum TierGrade: String, CaseIterable {
+enum TierGrade: String, CaseIterable, Codable {
     case bronze = "브론즈"
     case silver = "실버"
     case gold = "골드"
@@ -46,7 +46,7 @@ enum TierGrade: String, CaseIterable {
 }
 
 // MARK: - 티어 Division (4 → 1)
-enum TierDivision: Int, CaseIterable {
+enum TierDivision: Int, CaseIterable, Codable {
     case four = 4
     case three = 3
     case two = 2
@@ -58,7 +58,7 @@ enum TierDivision: Int, CaseIterable {
 }
 
 // MARK: - 티어 정보
-struct Tier: Equatable {
+struct Tier: Equatable, Codable {
     let grade: TierGrade
     let division: TierDivision
     

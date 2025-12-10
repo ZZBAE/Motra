@@ -8,7 +8,7 @@
 import Foundation
 
 // MARK: - 유저 프로필
-struct UserProfile {
+struct UserProfile: Codable {
     var id: UUID
     var nickname: String
     var username: String  // @username
@@ -164,15 +164,15 @@ struct Follow: Identifiable {
 // MARK: - Mock Data
 extension UserProfile {
     static let mock = UserProfile(
-        nickname: "러너김철수",
-        username: "runner_kim",
+        nickname: "나",
+        username: "me",
         bio: "매일 달리는 게 목표! 🏃‍♂️",
-        tier: Tier(grade: .gold, division: .two),
-        totalDistance: 285000,  // 285km
+        tier: Tier(grade: .bronze, division: .four),
+        totalDistance: 0,
         joinDate: Calendar.current.date(from: DateComponents(year: 2025, month: 1))!,
-        followerCount: 128,
-        followingCount: 45,
-        postCount: 32
+        followerCount: 0,
+        followingCount: 0,
+        postCount: 0
     )
 }
 

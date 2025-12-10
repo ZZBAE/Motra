@@ -11,10 +11,10 @@ import Foundation
 struct Post: Identifiable, Codable {
     let id: UUID
     let authorId: UUID
-    let authorNickname: String
-    let authorUsername: String
-    var authorTier: TierData  // var로 변경 - 현재 티어 반영을 위해
-    let exerciseId: UUID?  // 연결된 운동 기록 (선택)
+    var authorNickname: String  // var로 변경 - 프로필 변경 반영
+    var authorUsername: String  // var로 변경 - 프로필 변경 반영
+    var authorTier: TierData    // var - 현재 티어 반영
+    let exerciseId: UUID?       // 연결된 운동 기록 (선택)
     let content: String
     let imageURL: String?
     let visibility: PostVisibility

@@ -14,10 +14,16 @@ struct HomeView: View {
     @State private var selectedWorkoutType: WorkoutType = .running
     @State private var showFeedView = false
     
+    // 오늘의 인사말
+    private let greeting = DailyGreeting.today()
+    
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
+                    // 커스텀 헤더
+                    CustomHeaderView(title: "Motra")
+                    
                     // 환영 메시지
                     welcomeSection
                     
@@ -32,9 +38,10 @@ struct HomeView: View {
                     // 소셜 피드
                     socialFeedSection
                 }
-                .padding()
+                .padding(.horizontal)
+                .padding(.bottom)
             }
-            .navigationTitle("Motra")
+            .navigationBarHidden(true)
             .background(Color(.systemGroupedBackground))
             .onAppear {
                 Task {
@@ -66,11 +73,11 @@ struct HomeView: View {
     // MARK: - 환영 메시지
     private var welcomeSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("안녕하세요! 🏃‍♂️")
+            Text(greeting.dateString)
                 .font(.title2)
                 .fontWeight(.bold)
             
-            Text("오늘도 건강한 하루 보내세요")
+            Text(greeting.message)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }

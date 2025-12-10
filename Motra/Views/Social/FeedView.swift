@@ -262,7 +262,11 @@ struct PostDetailView: View {
     var onPostDeleted: ((Post) -> Void)?
     
     private var isMyPost: Bool {
-        post.authorNickname == "나" || post.authorUsername == "me"
+        let currentUser = UserManager.shared.currentUser
+        return post.authorNickname == currentUser.nickname ||
+               post.authorUsername == currentUser.username ||
+               post.authorNickname == "나" ||
+               post.authorUsername == "me"
     }
     
     init(post: Post, onPostUpdated: ((Post) -> Void)? = nil, onPostDeleted: ((Post) -> Void)? = nil) {
@@ -720,10 +724,12 @@ class PostDetailViewModel: ObservableObject {
     
     private let post: Post
     private let postRepository: PostRepository
+    private let userManager: UserManager
     
-    init(post: Post, postRepository: PostRepository = LocalPostRepository()) {
+    init(post: Post, postRepository: PostRepository = LocalPostRepository(), userManager: UserManager = .shared) {
         self.post = post
         self.postRepository = postRepository
+        self.userManager = userManager
         
         Task {
             await loadComments()
@@ -743,11 +749,18 @@ class PostDetailViewModel: ObservableObject {
     }
     
     func addComment(content: String) async {
+        // UserManager에서 현재 유저 정보 가져오기
+        let currentUser = userManager.currentUser
+        let tierData = TierData(
+            grade: currentUser.tier.grade.rawValue,
+            division: currentUser.tier.division.rawValue
+        )
+        
         let comment = Comment(
             postId: post.id,
-            authorNickname: "나",
-            authorUsername: "me",
-            authorTier: TierData(grade: "골드", division: 2),
+            authorNickname: currentUser.nickname,
+            authorUsername: currentUser.username,
+            authorTier: tierData,
             content: content
         )
         
