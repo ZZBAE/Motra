@@ -9,6 +9,7 @@ import SwiftUI
 import Charts
 
 struct ProfileView: View {
+    @EnvironmentObject var authViewModel: AuthViewModel
     @StateObject private var viewModel = ProfileViewModel()
     @State private var showEditProfile = false
     @State private var showNewPost = false
@@ -17,6 +18,8 @@ struct ProfileView: View {
     @State private var showSettings = false
     @State private var showTierHistory = false
     @State private var selectedPost: Post?
+    @State private var showLogoutAlert = false
+    @State private var showDeleteAccountAlert = false
     
     var body: some View {
         NavigationStack {
@@ -33,6 +36,9 @@ struct ProfileView: View {
                     
                     // 설정 메뉴
                     settingsSection
+                    
+                    // 계정 관리 섹션 (로그아웃, 회원탈퇴)
+                    accountSection
                 }
                 .padding(.horizontal)
                 .padding(.bottom)
@@ -99,6 +105,24 @@ struct ProfileView: View {
                     }
                 )
             }
+            .alert("로그아웃", isPresented: $showLogoutAlert) {
+                Button("취소", role: .cancel) { }
+                Button("로그아웃", role: .destructive) {
+                    authViewModel.signOut()
+                }
+            } message: {
+                Text("정말 로그아웃 하시겠습니까?")
+            }
+            .alert("회원탈퇴", isPresented: $showDeleteAccountAlert) {
+                Button("취소", role: .cancel) { }
+                Button("탈퇴하기", role: .destructive) {
+                    Task {
+                        await authViewModel.deleteAccount()
+                    }
+                }
+            } message: {
+                Text("정말 탈퇴하시겠습니까?\n모든 데이터가 삭제되며 복구할 수 없습니다.")
+            }
         }
     }
     
@@ -127,7 +151,7 @@ struct ProfileView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     // 닉네임 & 티어
                     HStack(spacing: 8) {
-                        Text(viewModel.profile.nickname)
+                        Text(displayNickname)
                             .font(.title3)
                             .fontWeight(.bold)
                         
@@ -152,10 +176,12 @@ struct ProfileView: View {
                         }
                     }
                     
-                    // @username
-                    Text("@\(viewModel.profile.username)")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                    // 이메일
+                    if let email = authViewModel.currentUser?.email {
+                        Text(email)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
                     
                     // 자기소개
                     if let bio = viewModel.profile.bio, !bio.isEmpty {
@@ -251,6 +277,15 @@ struct ProfileView: View {
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .shadow(radius: 2)
+    }
+    
+    // MARK: - 표시할 닉네임
+    private var displayNickname: String {
+        // 로그인한 사용자의 닉네임 우선 사용
+        if let nickname = authViewModel.currentUser?.nickname, !nickname.isEmpty {
+            return nickname
+        }
+        return viewModel.profile.nickname
     }
     
     // MARK: - 게시물 섹션
@@ -399,6 +434,70 @@ struct ProfileView: View {
             
             SettingsRow(icon: "gearshape", title: "설정", color: .gray) {
                 showSettings = true
+            }
+        }
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .shadow(radius: 2)
+    }
+    
+    // MARK: - 계정 관리 섹션
+    private var accountSection: some View {
+        VStack(spacing: 0) {
+            // 로그아웃
+            Button {
+                showLogoutAlert = true
+            } label: {
+                HStack(spacing: 16) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.orange)
+                            .frame(width: 36, height: 36)
+                        
+                        Image(systemName: "rectangle.portrait.and.arrow.right")
+                            .foregroundStyle(.white)
+                            .font(.system(size: 18))
+                    }
+                    
+                    Text("로그아웃")
+                        .foregroundStyle(.primary)
+                    
+                    Spacer()
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding()
+            }
+            
+            Divider().padding(.leading, 60)
+            
+            // 회원탈퇴
+            Button {
+                showDeleteAccountAlert = true
+            } label: {
+                HStack(spacing: 16) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.red)
+                            .frame(width: 36, height: 36)
+                        
+                        Image(systemName: "person.crop.circle.badge.minus")
+                            .foregroundStyle(.white)
+                            .font(.system(size: 18))
+                    }
+                    
+                    Text("회원탈퇴")
+                        .foregroundStyle(.red)
+                    
+                    Spacer()
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding()
             }
         }
         .background(Color(.systemBackground))
@@ -844,13 +943,6 @@ struct SettingsView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-                
-                Section("계정") {
-                    Button("로그아웃") {
-                        // TODO: 로그아웃
-                    }
-                    .foregroundStyle(.red)
-                }
             }
             .navigationTitle("설정")
             .navigationBarTitleDisplayMode(.inline)
@@ -865,4 +957,5 @@ struct SettingsView: View {
 
 #Preview {
     ProfileView()
+        .environmentObject(AuthViewModel())
 }
